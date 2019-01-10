@@ -24,7 +24,11 @@ loader
     .add("../images/treasureHunter.json")
     .load(setup)
 
+// sprites
 let dungeon, explorer, treasure, door, textureAtlas, rectangle, blobs, healthBar
+
+// game data
+let explorerHit
 let state
 
 function setup() {
@@ -111,7 +115,7 @@ function setup() {
         fontSize: 64,
         fill: "white"
     })
-    let message = new Text("G A M E O V E R", style)
+    let message = new Text("placeholder", style)
     message.x = 120
     message.y = app.stage.height / 2 - 32
     gameOverScene.addChild(message)
@@ -170,32 +174,65 @@ function setup() {
         }
     }
 
-    // set up state
+    // start game
     state = play
-
-    // start loop
     app.ticker.add(gameLoop)
 }
 
 function gameLoop(delta) {
-    // update state
     state(delta)
 }
 
 function play(delta) {
+    let explorerHit = false
+
     explorer.x += explorer.vx
     explorer.y += explorer.vy
 
-    let boundary = {
+    contain(explorer, {
         x: 26,
         y: 10,
         width: 460,
         height: 492,
-    }
+    })
 
-    contain(explorer, boundary)
+    blobs.forEach((blob) => {
+        blob.y += blob.vy
+
+        const blobCollisionPosition = contain(blob, {
+            x: 26,
+            y: 10,
+            width: 460,
+            height: 492,
+        })
+
+        if (blobCollisionPosition === 'top' || blobCollisionPosition === 'bottom') {
+            blob.vy *= -1
+        }
+
+        if (hasCollision(explorer, blob)) {
+            explorer.alpha = 0.5
+            healthBar.foregroundBar.width -= 1
+        } else {
+            explorer.alpha = 1
+        }
+
+        if (hasCollision(explorer, treasure)) {
+            treasure.x = explorer.x + 8
+            treasure.y = explorer.y + 8
+        }
+
+        if (hasCollision(treasure, door)) {
+            state = end
+            message.text = "Congratulations you win! Thank you for playing"
+        }
+
+        if (healthBar.foregroundBar.width < 0) {
+            state = end
+            message.text = "You died. Game Over"
+        }
+    })
 }
-
 
 function contain(sprite, boundary) {
     // left
@@ -223,6 +260,22 @@ function contain(sprite, boundary) {
     }
 
     return null
+}
+
+function hasCollision(r1, r2) {
+    let combinedHalfWidths, combinedHalfHeights, vx, vy
+
+    combinedHalfWidths = (r1.width / 2) + (r2.width / 2)
+    combinedHalfHeights = (r1.height / 2) + (r2.height / 2)
+
+    vx = (r1.x + r1.width / 2) - (r2.x + r2.width / 2)
+    vy = (r1.y + r1.height / 2) - (r2.y + r2.height / 2)
+
+    if (Math.abs(vx) < combinedHalfWidths && Math.abs(vy) < combinedHalfHeights){
+        return true
+    }
+
+    return false
 }
 
 function keyboard(keyCode) {
@@ -259,22 +312,6 @@ function keyboard(keyCode) {
 
 
     return key
-}
-
-function hitTest(r1, r2) {
-    let combinedHalfWidths, combinedHalfHeights, vx, vy
-
-    combinedHalfWidths = (r1.width / 2) + (r2.width / 2)
-    combinedHalfHeights = (r1.height / 2) + (r2.height / 2)
-
-    vx = (r1.x + r1.width / 2) - (r2.x + r2.width / 2)
-    vy = (r1.y + r1.height / 2) - (r2.y + r2.height / 2)
-
-    if (Math.abs(vx) < combinedHalfWidths && Math.abs(vy) < combinedHalfHeights){
-        return true
-    }
-
-    return false
 }
 
 function randomInt(min , max) {
