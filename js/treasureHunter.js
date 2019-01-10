@@ -24,8 +24,11 @@ loader
     .add("../images/treasureHunter.json")
     .load(setup)
 
+// scenes
+let gameScene, gameOverScene
+
 // sprites
-let dungeon, explorer, treasure, door, textureAtlas, rectangle, blobs, healthBar
+let dungeon, explorer, treasure, door, textureAtlas, rectangle, blobs, healthBar, message
 
 // game data
 let explorerHit
@@ -33,10 +36,10 @@ let state
 
 function setup() {
     // initialize game scenes
-    const gameScene= new Container()
+    gameScene= new Container()
     app.stage.addChild(gameScene)
 
-    const gameOverScene = new Container()
+    gameOverScene = new Container()
     gameOverScene.visible = false
     app.stage.addChild(gameOverScene)
 
@@ -112,11 +115,11 @@ function setup() {
     // gameOverScene text
     let style = new TextStyle({
         fontFamily: "Futura",
-        fontSize: 64,
+        fontSize: 18,
         fill: "white"
     })
-    let message = new Text("placeholder", style)
-    message.x = 120
+    message = new Text("placeholder", style)
+    message.x = 80
     message.y = app.stage.height / 2 - 32
     gameOverScene.addChild(message)
 
@@ -224,7 +227,7 @@ function play(delta) {
 
         if (hasCollision(treasure, door)) {
             state = end
-            message.text = "Congratulations you win! Thank you for playing"
+            message.text = "Congratulations you win! Thank you for playing\n Credits: me"
         }
 
         if (healthBar.foregroundBar.width < 0) {
@@ -232,6 +235,11 @@ function play(delta) {
             message.text = "You died. Game Over"
         }
     })
+}
+
+function end() {
+    gameScene.visible = false
+    gameOverScene.visible = true
 }
 
 function contain(sprite, boundary) {
