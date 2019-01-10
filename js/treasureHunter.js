@@ -24,53 +24,97 @@ loader
     .add("../images/treasureHunter.json")
     .load(setup)
 
-let dungeon, explorer, treasure, door, id, rectangle
+let dungeon, explorer, treasure, door, textureAtlas, rectangle, blobs, healthBar
 let state
 
 function setup() {
-    id = resources["../images/treasureHunter.json"].textures
+    // initialize game scenes
+    const gameScene= new Container()
+    app.stage.addChild(gameScene)
+
+    const gameOverScene = new Container()
+    gameOverScene.visible = false
+    app.stage.addChild(gameOverScene)
+
+    // add sprites from texture atlas
+    textureAtlas = resources["../images/treasureHunter.json"].textures
 
     // dungeon
-    dungeon = new Sprite(id["dungeon.png"])
-    app.stage.addChild(dungeon)
-
-    // explorer
-    explorer = new Sprite(id["explorer.png"])
-    explorer.x = 68
-    explorer.y = app.stage.height /2 - explorer.height / 2
-
-    explorer.vx = 0
-    explorer.vy = 0
-
-    app.stage.addChild(explorer)
-
-    // treasure
-    treasure = new Sprite(id["treasure.png"])
-    treasure.x = app.stage.width - treasure.width - 48
-    treasure.y = app.stage.height / 2 - treasure.height / 2
-    app.stage.addChild(treasure)
+    dungeon = new Sprite(textureAtlas["dungeon.png"])
+    gameScene.addChild(dungeon)
 
     // door
-    door = new Sprite(id["door.png"])
+    door = new Sprite(textureAtlas["door.png"])
     door.position.set(32, 0)
-    app.stage.addChild(door)
+    gameScene.addChild(door)
+
+    // explorer
+    explorer = new Sprite(textureAtlas["explorer.png"])
+    explorer.x = 68
+    explorer.y = app.stage.height /2 - explorer.height / 2
+    explorer.vx = 0
+    explorer.vy = 0
+    gameScene.addChild(explorer)
+
+    // treasure
+    treasure = new Sprite(textureAtlas["treasure.png"])
+    treasure.x = app.stage.width - treasure.width - 48
+    treasure.y = app.stage.height / 2 - treasure.height / 2
+    gameScene.addChild(treasure)
 
     // blobs
     let numBlobs = 6,
         spacing = 48,
-        xOffset = 150
+        xOffset = 150,
+        speed = 2,
+        direction = 1
+
+    blobs = []
 
     for (let i = 0; i < numBlobs; i++) {
-        let blob = new Sprite(id["blob.png"])
+        let blob = new Sprite(textureAtlas["blob.png"])
 
-        let x = spacing * i + xOffset
+        let x = xOffset + i * spacing
         let y = randomInt(0, app.stage.height - blob.height)
 
         blob.x = x
         blob.y = y
+        blob.vy = direction * speed
+        gameScene.addChild(blob)
 
-        app.stage.addChild(blob)
+        blobs.push(blob)
+        direction *= -1
     }
+
+    // healthBar
+    healthBar = new PIXI.Container()
+    healthBar.position.set(app.stage.width - 170, 4)
+    gameScene.addChild(healthBar)
+
+    let backgroundBar = new PIXI.Graphics()
+    backgroundBar.beginFill(0x000000)
+    backgroundBar.drawRect(0, 0, 128, 8)
+    backgroundBar.endFill()
+    healthBar.addChild(backgroundBar)
+
+    let foregroundBar = new PIXI.Graphics()
+    foregroundBar.beginFill(0xFF3300)
+    foregroundBar.drawRect(0, 0, 128, 8)
+    foregroundBar.endFill()
+    healthBar.addChild(foregroundBar)
+
+    healthBar.foregroundBar = foregroundBar
+
+    // gameOverScene text
+    let style = new TextStyle({
+        fontFamily: "Futura",
+        fontSize: 64,
+        fill: "white"
+    })
+    let message = new Text("G A M E O V E R", style)
+    message.x = 120
+    message.y = app.stage.height / 2 - 32
+    gameOverScene.addChild(message)
 
     // keyboard controls
     let left = keyboard(37),
@@ -126,26 +170,6 @@ function setup() {
         }
     }
 
-    // rectangle
-    rectangle = new Graphics()
-    rectangle.beginFill(0x66CCFF)
-    rectangle.lineStyle(4, 0x00FF33, 1)
-    rectangle.drawRect(0, 0, 64, 64)
-    rectangle.endFill()
-    rectangle.x = 128
-    rectangle.y = 128
-    app.stage.addChild(rectangle)
-
-    // add some text
-    let style = new TextStyle({
-        fontFamily: "sans-serif",
-        fontSize: 18,
-        fill: "white",
-    })
-    message = new Text("No collision...", style)
-    message.position.set(80,8)
-    app.stage.addChild(message)
-
     // set up state
     state = play
 
@@ -162,13 +186,43 @@ function play(delta) {
     explorer.x += explorer.vx
     explorer.y += explorer.vy
 
-    if (hitTest(explorer, rectangle)) {
-        message.text = "hit!";
-        rectangle.tint = 0xff3300
-    } else {
-        message.text = "no collision..."
-        rectangle.tint = 0xccff99
+    let boundary = {
+        x: 26,
+        y: 10,
+        width: 460,
+        height: 492,
     }
+
+    contain(explorer, boundary)
+}
+
+
+function contain(sprite, boundary) {
+    // left
+    if (sprite.x < boundary.x) {
+        sprite.x = boundary.x
+        return "left"
+    }
+
+    // top
+    if (sprite.y < boundary.y) {
+        sprite.y = boundary.y
+        return "top"
+    }
+
+    // right
+    if (sprite.x + sprite.width > boundary.x + boundary.width) {
+        sprite.x = boundary.x + boundary.width - sprite.width
+        return "right"
+    }
+
+    // bottom
+    if (sprite.y + sprite.height > boundary.y + boundary.height) {
+        sprite.y = boundary.y + boundary.height - sprite.height
+        return "bottom"
+    }
+
+    return null
 }
 
 function keyboard(keyCode) {
