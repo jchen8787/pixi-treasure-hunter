@@ -24,14 +24,8 @@ loader
     .add("../images/treasureHunter.json")
     .load(setup)
 
-// scenes
 let gameScene, gameOverScene
-
-// sprites
-let dungeon, explorer, treasure, door, textureAtlas, rectangle, blobs, healthBar, message
-
-// game data
-let explorerHit
+let textureAtlas, dungeon, explorer, blobs, treasure, door, healthBar, message
 let state
 
 function setup() {
@@ -70,27 +64,44 @@ function setup() {
     gameScene.addChild(treasure)
 
     // blobs
-    let numBlobs = 6,
+    let numBlobs = 16,
         spacing = 48,
-        xOffset = 150,
-        speed = 2,
-        direction = 1
+        xOffset = 102,
+        speed = 3
 
     blobs = []
 
     for (let i = 0; i < numBlobs; i++) {
         let blob = new Sprite(textureAtlas["blob.png"])
 
-        let x = xOffset + i * spacing
-        let y = randomInt(0, app.stage.height - blob.height)
+        if (i % 4 === 0) {
+            blob.x = xOffset + (i/2) * spacing
+            blob.y = randomInt(0, app.stage.height /2 - blob.height)
 
-        blob.x = x
-        blob.y = y
-        blob.vy = direction * speed
+            blob.vx = 0
+            blob.vy = speed
+        } else if (i % 4 === 1) {
+            blob.x = xOffset + (i-1)/2 * spacing
+            blob.y = randomInt(app.stage.height /2, app.stage.height - blob.height)
+
+            blob.vx = speed
+            blob.vy = 0
+        } else if (i % 4 === 2) {
+            blob.x = xOffset + (i/2) * spacing
+            blob.y = randomInt(0, app.stage.height /2 - blob.height)
+
+            blob.vx = -speed
+            blob.vy = 0
+        } else if (i % 4 === 3) {
+            blob.x = xOffset + ((i-1)/2) * spacing
+            blob.y = randomInt(app.stage.height /2, app.stage.height - blob.height)
+
+            blob.vx = 0
+            blob.vy = -speed
+        }
+
         gameScene.addChild(blob)
-
         blobs.push(blob)
-        direction *= -1
     }
 
     // healthBar
@@ -114,68 +125,18 @@ function setup() {
 
     // gameOverScene text
     let style = new TextStyle({
-        fontFamily: "Futura",
+        align: 'center',
+        fill: 'white',
+        fontFamily: 'Futura',
         fontSize: 18,
-        fill: "white"
     })
     message = new Text("placeholder", style)
-    message.x = 80
-    message.y = app.stage.height / 2 - 32
+    message.x = 120
+    message.y = 160
     gameOverScene.addChild(message)
 
     // keyboard controls
-    let left = keyboard(37),
-        up = keyboard(38),
-        right = keyboard(39),
-        down = keyboard(40)
-
-    // left
-    left.press = () => {
-        explorer.vx = -5
-        explorer.vy = 0
-    }
-
-    left.release = () => {
-        if (!right.isDown && explorer.vy === 0) {
-            explorer.vx = 0
-        }
-    }
-
-    // up
-    up.press = () => {
-        explorer.vy = -5
-        explorer.vx = 0
-    }
-
-    up.release = () => {
-        if (!down.isDown && explorer.vx === 0) {
-            explorer.vy = 0
-        }
-    }
-
-    // right
-    right.press = () => {
-        explorer.vx = 5
-        explorer.vy = 0
-    }
-
-    right.release = () => {
-        if (!left.isDown && explorer.vy === 0) {
-            explorer.vx = 0
-        }
-    }
-
-    // down
-    down.press = () => {
-        explorer.vx = 0
-        explorer.vy = 5
-    }
-
-    down.release = () => {
-        if (!up.isDown && explorer.vx === 0) {
-            explorer.vy = 0
-        }
-    }
+    bindKeys()
 
     // start game
     state = play
@@ -187,8 +148,6 @@ function gameLoop(delta) {
 }
 
 function play(delta) {
-    let explorerHit = false
-
     explorer.x += explorer.vx
     explorer.y += explorer.vy
 
@@ -200,6 +159,7 @@ function play(delta) {
     })
 
     blobs.forEach((blob) => {
+        blob.x += blob.vx
         blob.y += blob.vy
 
         const blobCollisionPosition = contain(blob, {
@@ -211,11 +171,13 @@ function play(delta) {
 
         if (blobCollisionPosition === 'top' || blobCollisionPosition === 'bottom') {
             blob.vy *= -1
+        } else if (blobCollisionPosition === 'left' || blobCollisionPosition === 'right') {
+            blob.vx *= -1
         }
 
         if (hasCollision(explorer, blob)) {
             explorer.alpha = 0.5
-            healthBar.foregroundBar.width -= 1
+            healthBar.foregroundBar.width -= 5
         } else {
             explorer.alpha = 1
         }
@@ -227,12 +189,20 @@ function play(delta) {
 
         if (hasCollision(treasure, door)) {
             state = end
-            message.text = "Congratulations you win! Thank you for playing\n Credits: me"
+            message.text =
+                "Congratulations you win!\n"
+                 + "Thank you for playing\n\n"
+                 + "Credits:\n"
+                 + "jchen\n"
+                 + "pixi\n\n"
+                 + "Copyright\u2122 Fetch Robotics 2019"
         }
 
         if (healthBar.foregroundBar.width < 0) {
             state = end
-            message.text = "You died. Game Over"
+            message.text =
+                "You died.\n\n"
+                + "Game Over"
         }
     })
 }
@@ -320,6 +290,63 @@ function keyboard(keyCode) {
 
 
     return key
+}
+
+function bindKeys() {
+    let left = keyboard(37),
+        up = keyboard(38),
+        right = keyboard(39),
+        down = keyboard(40)
+
+    const explorerSpeed = 3
+
+    // left
+    left.press = () => {
+        explorer.vx = -explorerSpeed
+        explorer.vy = 0
+    }
+
+    left.release = () => {
+        if (!right.isDown && explorer.vy === 0) {
+            explorer.vx = 0
+        }
+    }
+
+    // up
+    up.press = () => {
+        explorer.vy = -explorerSpeed
+        explorer.vx = 0
+    }
+
+    up.release = () => {
+        if (!down.isDown && explorer.vx === 0) {
+            explorer.vy = 0
+        }
+    }
+
+    // right
+    right.press = () => {
+        explorer.vx = explorerSpeed
+        explorer.vy = 0
+    }
+
+    right.release = () => {
+        if (!left.isDown && explorer.vy === 0) {
+            explorer.vx = 0
+        }
+    }
+
+    // down
+    down.press = () => {
+        explorer.vx = 0
+        explorer.vy = explorerSpeed
+    }
+
+    down.release = () => {
+        if (!up.isDown && explorer.vx === 0) {
+            explorer.vy = 0
+        }
+    }
 }
 
 function randomInt(min , max) {
