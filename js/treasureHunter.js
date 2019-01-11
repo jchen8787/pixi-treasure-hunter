@@ -135,9 +135,6 @@ function setup() {
     message.y = 160
     gameOverScene.addChild(message)
 
-    // keyboard controls
-    bindKeys()
-
     // start game
     state = play
     app.ticker.add(gameLoop)
@@ -148,6 +145,8 @@ function gameLoop(delta) {
 }
 
 function play(delta) {
+    checkKeys()
+
     explorer.x += explorer.vx
     explorer.y += explorer.vy
 
@@ -176,8 +175,8 @@ function play(delta) {
         }
 
         if (hasCollision(explorer, blob)) {
-            explorer.alpha = 0.5
-            healthBar.foregroundBar.width -= 5
+            explorer.alpha = 0.1
+            healthBar.foregroundBar.width -= 4
         } else {
             explorer.alpha = 1
         }
@@ -256,96 +255,69 @@ function hasCollision(r1, r2) {
     return false
 }
 
-function keyboard(keyCode) {
-    var key = {}
-    key.code = keyCode
-    key.isDown = false
-    key.isUp = true
-    key.press = undefined
-    key.release = undefined
+const explorerSpeed = 3
+let keys = []
 
-    downHandler = (event) => {
-        if (event.keyCode === key.code) {
-            if (key.isUp && key.press) {
-                key.press()
-            }
-            key.isDown = true
-            key.isUp = false
-        }
-        event.preventDefault()
-    }
+window.addEventListener('keydown', (e) => {
+    keys[e.key] = true
+})
 
-    upHandler = (event) => {
-        if (event.keyCode === key.code) {
-            if (key.isDown && key.release) {
-                key.release()
-            }
-            key.isDown = false
-            key.isUp = true
-        }
-    }
+window.addEventListener('keyup', (e) => {
+    keys[e.key] = false
+})
 
-    window.addEventListener("keydown", downHandler, false)
-    window.addEventListener("keyup", upHandler, false)
-
-
-    return key
-}
-
-function bindKeys() {
-    let left = keyboard(37),
-        up = keyboard(38),
-        right = keyboard(39),
-        down = keyboard(40)
-
-    const explorerSpeed = 3
-
-    // left
-    left.press = () => {
+const checkKeys = () => {
+    if (
+        (keys['ArrowUp'] && keys['ArrowLeft'])
+        || (keys['w'] && keys['a'])
+    ) {
+        explorer.vx = -explorerSpeed
+        explorer.vy = -explorerSpeed
+    } else if (
+        (keys['ArrowUp'] && keys['ArrowRight'])
+        || (keys['w'] && keys['d'])
+    ) {
+        explorer.vx = explorerSpeed
+        explorer.vy = -explorerSpeed
+    } else if (
+        (keys['ArrowDown'] && keys['ArrowLeft'])
+        || (keys['s'] && keys['a'])
+    ) {
+        explorer.vx = -explorerSpeed
+        explorer.vy = explorerSpeed
+    } else if (
+        (keys['ArrowDown'] && keys['ArrowRight'])
+        || (keys['s'] && keys['d'])
+    ) {
+        explorer.vx = explorerSpeed
+        explorer.vy = explorerSpeed
+    } else if (
+        (keys['ArrowUp'] && !keys['ArrowDown'])
+        || (keys['w'] && !keys['s'])
+    ) {
+        explorer.vx = 0
+        explorer.vy = -explorerSpeed
+    } else if (
+       (keys['ArrowLeft'] && !keys['ArrowRight'])
+        || (keys['a'] && !keys['d'])
+    ) {
         explorer.vx = -explorerSpeed
         explorer.vy = 0
-    }
-
-    left.release = () => {
-        if (!right.isDown && explorer.vy === 0) {
-            explorer.vx = 0
-        }
-    }
-
-    // up
-    up.press = () => {
-        explorer.vy = -explorerSpeed
+    } else if (
+        (keys['ArrowDown'] && !keys['ArrowUp'])
+         || (keys['s'] && !keys['w'])
+     ) {
+         explorer.vx = 0
+         explorer.vy = explorerSpeed
+     } else if (
+        (keys['ArrowRight'] && !keys['ArrowLeft'])
+         || (keys['d'] && !keys['a'])
+     ) {
+         explorer.vx = explorerSpeed
+         explorer.vy = 0
+     } else {
         explorer.vx = 0
-    }
-
-    up.release = () => {
-        if (!down.isDown && explorer.vx === 0) {
-            explorer.vy = 0
-        }
-    }
-
-    // right
-    right.press = () => {
-        explorer.vx = explorerSpeed
         explorer.vy = 0
-    }
-
-    right.release = () => {
-        if (!left.isDown && explorer.vy === 0) {
-            explorer.vx = 0
-        }
-    }
-
-    // down
-    down.press = () => {
-        explorer.vx = 0
-        explorer.vy = explorerSpeed
-    }
-
-    down.release = () => {
-        if (!up.isDown && explorer.vx === 0) {
-            explorer.vy = 0
-        }
     }
 }
 
