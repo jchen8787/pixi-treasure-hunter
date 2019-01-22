@@ -1,0 +1,23 @@
+{
+  "name": "pixi_testing",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "http-server -p 6969"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jchen8787/pixi-treasure-hunter.git"
+  },
+  "author": "jchen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jchen8787/pixi-treasure-hunter/issues"
+  },
+  "homepage": "https://github.com/jchen8787/pixi-treasure-hunter#readme",
+  "devDependencies": {
+    "http-server": "^0.11.1"
+  }
+}
